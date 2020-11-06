@@ -111,7 +111,7 @@ int main(int argc, char **argv)
 
   ROS_INFO("%s", msg.c_str());
 
-  ros::Rate loop_rate(100);
+  ros::Rate loop_rate(30);
 
   while(ros::ok())
   {

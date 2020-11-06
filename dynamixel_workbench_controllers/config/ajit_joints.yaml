@@ -1,0 +1,93 @@
+# You can find control table of Dynamixel on emanual (http://emanual.robotis.com/#control-table)
+# Control table item has to be set Camel_Case and not included whitespace
+# You are supposed to set at least Dynamixel ID
+# This example is compatible with Dynamixel using protocol 2.0
+head:
+  ID: 31
+  Return_Delay_Time: 0
+  Operating_Mode: 3
+  Profile_Acceleration: 0
+  Profile_Velocity: 25
+neck:
+  ID: 30
+  Return_Delay_Time: 0
+  Operating_Mode: 3
+  Profile_Acceleration: 0
+  Profile_Velocity: 25
+
+RSX:
+  ID: 10
+  Return_Delay_Time: 0
+  Operating_Mode: 3
+  Profile_Acceleration: 0
+  Profile_Velocity: 25
+
+RSY:
+  ID: 11
+  Return_Delay_Time: 0
+  Operating_Mode: 3
+  Profile_Acceleration: 0
+  Profile_Velocity: 25
+
+
+RSZ:
+  ID: 12
+  Return_Delay_Time: 0
+  Operating_Mode: 3
+  Profile_Acceleration: 0
+  Profile_Velocity: 25
+
+
+RElbow:
+  ID: 13
+  Return_Delay_Time: 0
+  Operating_Mode: 3
+  Profile_Acceleration: 0
+  Profile_Velocity: 25
+
+
+RWrist:
+  ID: 14
+  Return_Delay_Time: 0
+  Operating_Mode: 3
+  Profile_Acceleration: 0
+  Profile_Velocity: 25
+
+
+LSX:
+  ID: 20
+  Return_Delay_Time: 0
+  Operating_Mode: 3
+  Profile_Acceleration: 0
+  Profile_Velocity: 25
+
+LSY:
+  ID: 21
+  Return_Delay_Time: 0
+  Operating_Mode: 3
+  Profile_Acceleration: 0
+  Profile_Velocity: 25
+
+
+LSZ:
+  ID: 22
+  Return_Delay_Time: 0
+  Operating_Mode: 3
+  Profile_Acceleration: 0
+  Profile_Velocity: 25
+
+
+LElbow:
+  ID: 23
+  Return_Delay_Time: 0
+  Operating_Mode: 3
+  Profile_Acceleration: 0
+  Profile_Velocity: 100
+
+
+LWrist:
+  ID: 24
+  Return_Delay_Time: 0
+  Operating_Mode: 3
+  Profile_Acceleration: 0
+  Profile_Velocity: 100

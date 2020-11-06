@@ -102,7 +102,7 @@ bool DynamixelController::loadDynamixels(void)
 {
   bool result = false;
   const char* log;
-
+  ROS_INFO("Loading Dynamixels");
   for (auto const& dxl:dynamixel_)
   {
     uint16_t model_number = 0;
@@ -125,13 +125,14 @@ bool DynamixelController::loadDynamixels(void)
 bool DynamixelController::initDynamixels(void)
 {
   const char* log;
-
+  ROS_INFO("Initializing Dynamixels");
   for (auto const& dxl:dynamixel_)
   {
     dxl_wb_->torqueOff((uint8_t)dxl.second);
-
+    ROS_INFO("DXL:%d",dxl.second);
     for (auto const& info:dynamixel_info_)
     {
+     
       if (dxl.first == info.first)
       {
         if (info.second.item_name != "ID" && info.second.item_name != "Baud_Rate")
@@ -147,7 +148,7 @@ bool DynamixelController::initDynamixels(void)
       }
     }
 
-    dxl_wb_->torqueOn((uint8_t)dxl.second);
+    //dxl_wb_->torqueOn((uint8_t)dxl.second);
   }
 
   return true;
@@ -198,23 +199,23 @@ bool DynamixelController::initSDKHandlers(void)
   result = dxl_wb_->addSyncWriteHandler(control_items_["Goal_Position"]->address, control_items_["Goal_Position"]->data_length, &log);
   if (result == false)
   {
-    ROS_ERROR("%s", log);
+    ROS_ERROR("[SDKHandler]%s", log);
     return result;
   }
   else
   {
-    ROS_INFO("%s", log);
+    ROS_INFO("[SDKHandler]%s", log);
   }
 
   result = dxl_wb_->addSyncWriteHandler(control_items_["Goal_Velocity"]->address, control_items_["Goal_Velocity"]->data_length, &log);
   if (result == false)
   {
-    ROS_ERROR("%s", log);
+    ROS_ERROR("[SDKHandler]%s", log);
     return result;
   }
   else
   {
-    ROS_INFO("%s", log);
+    ROS_INFO("[SDKHandler]%s", log);
   }
 
   if (dxl_wb_->getProtocolVersion() == 2.0f)
@@ -232,9 +233,14 @@ bool DynamixelController::initSDKHandlers(void)
                                           &log);
     if (result == false)
     {
-      ROS_ERROR("%s", log);
+      ROS_ERROR("[SDKHandler]%s", log);
       return result;
     }
+    else
+    {
+     ROS_INFO("[SDKHandler]%s",log);
+    }
+
   }
 
   return result;
@@ -315,7 +321,7 @@ bool DynamixelController::getPresentPosition(std::vector<std::string> dxl_name)
 
 void DynamixelController::initPublisher()
 {
-  dynamixel_state_list_pub_ = priv_node_handle_.advertise<dynamixel_workbench_msgs::DynamixelStateList>("dynamixel_state", 100);
+  dynamixel_state_list_pub_ = priv_node_handle_.advertise<dynamixel_workbench_msgs::DynamixelStateList>("dynamixel_state", 1);
   if (is_joint_state_topic_) joint_states_pub_ = priv_node_handle_.advertise<sensor_msgs::JointState>("joint_states", 100);
 }
 
@@ -328,6 +334,7 @@ void DynamixelController::initSubscriber()
 void DynamixelController::initServer()
 {
   dynamixel_command_server_ = priv_node_handle_.advertiseService("dynamixel_command", &DynamixelController::dynamixelCommandMsgCallback, this);
+  dynamixel_torque_server_ = priv_node_handle_.advertiseService("dynamixel_torque",&DynamixelController::dynamixelTorqueCallback,this);
 }
 
 void DynamixelController::readCallback(const ros::TimerEvent&)
@@ -511,8 +518,11 @@ void DynamixelController::commandVelocityCallback(const geometry_msgs::Twist::Co
   double wheel_velocity[dynamixel_.size()];
   int32_t dynamixel_velocity[dynamixel_.size()];
 
-  const uint8_t LEFT = 0;
-  const uint8_t RIGHT = 1;
+  const uint8_t LEFT_FRONT = 0;
+  const uint8_t RIGHT_FRONT = 1;
+  const uint8_t LEFT_REAR = 2;
+  const uint8_t RIGHT_REAR = 3;
+
 
   double robot_lin_vel = msg->linear.x;
   double robot_ang_vel = msg->angular.z;
@@ -527,48 +537,57 @@ void DynamixelController::commandVelocityCallback(const geometry_msgs::Twist::Co
     rpm = modelInfo->rpm;
     id_array[id_cnt++] = (uint8_t)dxl.second;
   }
+  ROS_INFO("CMD_CALLBACK_LOG:");
+  ROS_INFO("ID_COUNT:%d,LF:%d,RF:%d,LR:%d,RR:%d",id_cnt,id_array[LEFT_FRONT],id_array[RIGHT_FRONT],id_array[LEFT_REAR],id_array[RIGHT_REAR]);
 
 //  V = r * w = r * (RPM * 0.10472) (Change rad/sec to RPM)
 //       = r * ((RPM * Goal_Velocity) * 0.10472)		=> Goal_Velocity = V / (r * RPM * 0.10472) = V * VELOCITY_CONSTATNE_VALUE
 
   double velocity_constant_value = 1 / (wheel_radius_ * rpm * 0.10472);
 
-  wheel_velocity[LEFT]  = robot_lin_vel - (robot_ang_vel * wheel_separation_ / 2);
-  wheel_velocity[RIGHT] = robot_lin_vel + (robot_ang_vel * wheel_separation_ / 2);
+  wheel_velocity[LEFT_FRONT]  = robot_lin_vel - (robot_ang_vel * wheel_separation_ / 2);
+  wheel_velocity[RIGHT_FRONT] = robot_lin_vel + (robot_ang_vel * wheel_separation_ / 2);
+  
+  wheel_velocity[LEFT_REAR]  = robot_lin_vel - (robot_ang_vel * wheel_separation_ / 2);
+  wheel_velocity[RIGHT_REAR] = robot_lin_vel + (robot_ang_vel * wheel_separation_ / 2);
+ 
 
   if (dxl_wb_->getProtocolVersion() == 2.0f)
   {
     if (strcmp(dxl_wb_->getModelName(id_array[0]), "XL-320") == 0)
     {
-      if (wheel_velocity[LEFT] == 0.0f) dynamixel_velocity[LEFT] = 0;
-      else if (wheel_velocity[LEFT] < 0.0f) dynamixel_velocity[LEFT] = ((-1.0f) * wheel_velocity[LEFT]) * velocity_constant_value + 1023;
-      else if (wheel_velocity[LEFT] > 0.0f) dynamixel_velocity[LEFT] = (wheel_velocity[LEFT] * velocity_constant_value);
+      if (wheel_velocity[LEFT_FRONT] == 0.0f) dynamixel_velocity[LEFT_FRONT] = 0;
+      else if (wheel_velocity[LEFT_FRONT] < 0.0f) dynamixel_velocity[LEFT_FRONT] = ((-1.0f) * wheel_velocity[LEFT_FRONT]) * velocity_constant_value + 1023;
+      else if (wheel_velocity[LEFT_FRONT] > 0.0f) dynamixel_velocity[LEFT_FRONT] = (wheel_velocity[LEFT_FRONT] * velocity_constant_value);
 
-      if (wheel_velocity[RIGHT] == 0.0f) dynamixel_velocity[RIGHT] = 0;
-      else if (wheel_velocity[RIGHT] < 0.0f)  dynamixel_velocity[RIGHT] = ((-1.0f) * wheel_velocity[RIGHT] * velocity_constant_value) + 1023;
-      else if (wheel_velocity[RIGHT] > 0.0f)  dynamixel_velocity[RIGHT] = (wheel_velocity[RIGHT] * velocity_constant_value);
+      if (wheel_velocity[RIGHT_FRONT] == 0.0f) dynamixel_velocity[RIGHT_FRONT] = 0;
+      else if (wheel_velocity[RIGHT_FRONT] < 0.0f)  dynamixel_velocity[RIGHT_FRONT] = ((-1.0f) * wheel_velocity[RIGHT_FRONT] * velocity_constant_value) + 1023;
+      else if (wheel_velocity[RIGHT_FRONT] > 0.0f)  dynamixel_velocity[RIGHT_FRONT] = (wheel_velocity[RIGHT_FRONT] * velocity_constant_value);
     }
     else
     {
-      dynamixel_velocity[LEFT]  = wheel_velocity[LEFT] * velocity_constant_value;
-      dynamixel_velocity[RIGHT] = wheel_velocity[RIGHT] * velocity_constant_value;
+     
+      dynamixel_velocity[LEFT_FRONT]  = wheel_velocity[LEFT_FRONT] * velocity_constant_value;
+      dynamixel_velocity[LEFT_REAR]  = wheel_velocity[LEFT_REAR] * velocity_constant_value;
+      dynamixel_velocity[RIGHT_FRONT] = wheel_velocity[RIGHT_FRONT] * velocity_constant_value;
+      dynamixel_velocity[RIGHT_REAR] = wheel_velocity[RIGHT_REAR] * velocity_constant_value;	
     }
   }
   else if (dxl_wb_->getProtocolVersion() == 1.0f)
   {
-    if (wheel_velocity[LEFT] == 0.0f) dynamixel_velocity[LEFT] = 0;
-    else if (wheel_velocity[LEFT] < 0.0f) dynamixel_velocity[LEFT] = ((-1.0f) * wheel_velocity[LEFT]) * velocity_constant_value + 1023;
-    else if (wheel_velocity[LEFT] > 0.0f) dynamixel_velocity[LEFT] = (wheel_velocity[LEFT] * velocity_constant_value);
+    if (wheel_velocity[LEFT_FRONT] == 0.0f) dynamixel_velocity[LEFT_FRONT] = 0;
+    else if (wheel_velocity[LEFT_FRONT] < 0.0f) dynamixel_velocity[LEFT_FRONT] = ((-1.0f) * wheel_velocity[LEFT_FRONT]) * velocity_constant_value + 1023;
+    else if (wheel_velocity[LEFT_FRONT] > 0.0f) dynamixel_velocity[LEFT_FRONT] = (wheel_velocity[LEFT_FRONT] * velocity_constant_value);
 
-    if (wheel_velocity[RIGHT] == 0.0f) dynamixel_velocity[RIGHT] = 0;
-    else if (wheel_velocity[RIGHT] < 0.0f)  dynamixel_velocity[RIGHT] = ((-1.0f) * wheel_velocity[RIGHT] * velocity_constant_value) + 1023;
-    else if (wheel_velocity[RIGHT] > 0.0f)  dynamixel_velocity[RIGHT] = (wheel_velocity[RIGHT] * velocity_constant_value);
+    if (wheel_velocity[RIGHT_FRONT] == 0.0f) dynamixel_velocity[RIGHT_FRONT] = 0;
+    else if (wheel_velocity[RIGHT_FRONT] < 0.0f)  dynamixel_velocity[RIGHT_FRONT] = ((-1.0f) * wheel_velocity[RIGHT_FRONT] * velocity_constant_value) + 1023;
+    else if (wheel_velocity[RIGHT_FRONT] > 0.0f)  dynamixel_velocity[RIGHT_FRONT] = (wheel_velocity[RIGHT_FRONT] * velocity_constant_value);
   }
 
   result = dxl_wb_->syncWrite(SYNC_WRITE_HANDLER_FOR_GOAL_VELOCITY, id_array, dynamixel_.size(), dynamixel_velocity, 1, &log);
   if (result == false)
   {
-    ROS_ERROR("%s", log);
+    ROS_ERROR("[CMDVEL_ERR]%s", log);
   }
 }
 
@@ -756,6 +775,23 @@ bool DynamixelController::dynamixelCommandMsgCallback(dynamixel_workbench_msgs::
   res.comm_result = result;
 
   return true;
+}
+
+bool DynamixelController::dynamixelTorqueCallback(dynamixel_workbench_msgs::DynamixelTorque::Request &req,
+                                                  dynamixel_workbench_msgs::DynamixelTorque::Response &res)
+{
+
+
+  ROS_INFO("Torque: %s",req.torque? "On":"Off");
+  for (auto const& dxl:dynamixel_)
+  {
+    if(req.torque)
+    dxl_wb_->torqueOn((uint8_t)dxl.second);
+    else
+    dxl_wb_->torqueOff((uint8_t)dxl.second);
+  }
+  res.comm_result = true;
+
 }
 
 int main(int argc, char **argv)
