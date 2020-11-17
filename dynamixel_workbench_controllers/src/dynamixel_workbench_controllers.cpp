@@ -40,6 +40,8 @@ DynamixelController::DynamixelController()
   {
     wheel_separation_ = priv_node_handle_.param<double>("mobile_robot_config/seperation_between_wheels", 0.0);
     wheel_radius_ = priv_node_handle_.param<double>("mobile_robot_config/radius_of_wheel", 0.0);
+    priv_node_handle_.getParam("mobile_robot_config/left_motors", left_motors_);
+    priv_node_handle_.getParam("mobile_robot_config/right_motors", right_motors_);
   }
 
   dxl_wb_ = new DynamixelWorkbench;
@@ -126,6 +128,11 @@ bool DynamixelController::initDynamixels(void)
 {
   const char* log;
   ROS_INFO("Initializing Dynamixels");
+<<<<<<< HEAD
+  ROS_INFO("LEFT MOTORS:[ %d, %d]", left_motors_[0],left_motors_[1]);
+  ROS_INFO("RIGHT MOTORS:[ %d, %d]",right_motors_[0],right_motors_[1]);
+=======
+>>>>>>> e0e443d47ad81b76b34f83fc73a30ad1bd4e68ad
   for (auto const& dxl:dynamixel_)
   {
     dxl_wb_->torqueOff((uint8_t)dxl.second);
@@ -820,6 +827,7 @@ int main(int argc, char **argv)
   std::string yaml_file = node_handle.param<std::string>("dynamixel_info", "");
 
   result = dynamixel_controller.initWorkbench(port_name, baud_rate);
+
   if (result == false)
   {
     ROS_ERROR("Please check USB port name");

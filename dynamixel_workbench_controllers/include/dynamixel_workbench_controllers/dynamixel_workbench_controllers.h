@@ -79,6 +79,9 @@ class DynamixelController
   std::map<std::string, uint32_t> dynamixel_;
   std::map<std::string, const ControlItem*> control_items_;
   std::vector<std::pair<std::string, ItemValue>> dynamixel_info_;
+  std::vector<int> left_motors_;
+  std::vector<int> right_motors_;
+
   dynamixel_workbench_msgs::DynamixelStateList dynamixel_state_list_;
   sensor_msgs::JointState joint_state_msg_;
   std::vector<WayPoint> pre_goal_;

@@ -4,8 +4,8 @@
   <arg name="namespace"               default="dynamixel_workbench"/>
 
   <arg name="use_moveit"              default="false"/>
-  <arg name="use_joint_state"         default="true"/>
-  <arg name="use_cmd_vel"             default="false"/>
+  <arg name="use_joint_state"         default="false"/>
+  <arg name="use_cmd_vel"             default="true"/>
 
   <param name="dynamixel_info"          value="$(find dynamixel_workbench_controllers)/config/ajit_joints.yaml"/>
 
@@ -21,6 +21,8 @@
       mobile_robot_config:                <!--this values will be set when 'use_cmd_vel' is true-->
         seperation_between_wheels: 0.160  <!--default value is set by reference of TB3-->
         radius_of_wheel: 0.033            <!--default value is set by reference of TB3-->
+        left_motors: [20,21]
+        right_motors: [10,11]
     </rosparam>
   </node>
 </launch>

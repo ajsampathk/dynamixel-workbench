@@ -82,12 +82,20 @@ LElbow:
   Return_Delay_Time: 0
   Operating_Mode: 3
   Profile_Acceleration: 0
+<<<<<<< HEAD
+  Profile_Velocity: 25
+=======
   Profile_Velocity: 100
 
+>>>>>>> e0e443d47ad81b76b34f83fc73a30ad1bd4e68ad
 
 LWrist:
   ID: 24
   Return_Delay_Time: 0
   Operating_Mode: 3
   Profile_Acceleration: 0
+<<<<<<< HEAD
+  Profile_Velocity: 25
+=======
   Profile_Velocity: 100
+>>>>>>> e0e443d47ad81b76b34f83fc73a30ad1bd4e68ad
