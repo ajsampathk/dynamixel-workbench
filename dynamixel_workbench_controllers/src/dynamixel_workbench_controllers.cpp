@@ -128,11 +128,8 @@ bool DynamixelController::initDynamixels(void)
 {
   const char* log;
   ROS_INFO("Initializing Dynamixels");
-<<<<<<< HEAD
   ROS_INFO("LEFT MOTORS:[ %d, %d]", left_motors_[0],left_motors_[1]);
   ROS_INFO("RIGHT MOTORS:[ %d, %d]",right_motors_[0],right_motors_[1]);
-=======
->>>>>>> e0e443d47ad81b76b34f83fc73a30ad1bd4e68ad
   for (auto const& dxl:dynamixel_)
   {
     dxl_wb_->torqueOff((uint8_t)dxl.second);
